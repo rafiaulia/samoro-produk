@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0F0F0F" />
+  <meta name="description" content="Katalog produk dan daftar harga SAMORO" />
+  <title>SAMORO-HARG</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== STICKY TOP AREA ===== -->
+  <div class="sticky-top">
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-brand">
+          <span class="brand-name">SAMORO<span class="brand-accent">-HARG</span></span>
+          <span class="brand-sub">Daftar Produk &amp; Harga</span>
+        </div>
+        <button id="btn-refresh" class="btn-refresh" title="Refresh data">
+          <svg class="icon-refresh" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="search-wrap">
+      <div class="search-inner">
+        <svg class="icon-search" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="search"
+          id="search-input"
+          class="search-input"
+          placeholder="Cari produk..."
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        <button id="btn-clear-search" class="btn-clear" aria-label="Hapus pencarian" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span id="status-count" class="status-count"></span>
+      <span id="status-sync" class="status-sync"></span>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main" id="main-content">
+
+    <!-- Loading state -->
+    <div id="loading-state" class="loading-state" aria-live="polite">
+      <div class="skeleton-list">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state" style="display:none;" aria-live="polite">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+          <circle cx="28" cy="28" r="20" stroke="currentColor" stroke-width="3"/>
+          <line x1="42" y1="42" x2="58" y2="58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <line x1="20" y1="28" x2="36" y2="28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="empty-title">Produk tidak ditemukan.</p>
+      <p class="empty-sub">Coba kata kunci yang berbeda.</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="error-state" class="error-state" style="display:none;" aria-live="polite">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3"/>
+          <line x1="32" y1="20" x2="32" y2="36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="44" r="2" fill="currentColor"/>
+        </svg>
+      </div>
+      <p class="error-title">Gagal memuat data.</p>
+      <p class="error-sub" id="error-msg">Periksa koneksi internet dan coba refresh.</p>
+    </div>
+
+    <!-- Product list -->
+    <ul id="product-list" class="product-list" role="list" style="display:none;"></ul>
+
+  </main>
+
+  <!-- ===== OFFLINE BANNER ===== -->
+  <div id="offline-banner" class="offline-banner" style="display:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="1" y1="1" x2="23" y2="23"></line>
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+      <path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path>
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+      <line x1="12" y1="20" x2="12.01" y2="20"></line>
+    </svg>
+    Mode offline — menampilkan data cache
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/cache.js"></script>
+  <script src="js/sheet.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
