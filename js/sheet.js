@@ -1,6 +1,7 @@
 /* ============================================================
    js/sheet.js
-   Fetches product data from Google Apps Script JSON endpoint
+   Fetches product data from Google Apps Script via JSONP
+   (JSONP dipakai karena GAS tidak support CORS dari browser)
    ============================================================ */
 
 const Sheet = (() => {
@@ -8,42 +9,49 @@ const Sheet = (() => {
   const API_URL = 'https://script.google.com/macros/s/AKfycbzoAG155Djwtqg2Wuy06XMZEaGDsocBVUFOgkU3y0ecRE-QpMk3koqHs9_s20E4Pwih/exec';
 
   /**
-   * Fetch product data from the API endpoint
-   * @returns {Promise<Array>} Array of product objects
-   * @throws {Error} if fetch or parse fails
+   * Fetch via JSONP — satu-satunya cara bypass CORS Google Apps Script
+   * @returns {Promise<Array>}
    */
-  async function fetchProducts() {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+  function fetchProducts() {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'samoroCallback_' + Date.now();
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Request timeout. Cek koneksi internet.'));
+      }, 15000);
 
-    try {
-const response = await fetch(API_URL, {
-  method: 'GET',
-  signal: controller.signal,
-  redirect: 'follow',
-  mode: 'cors',
-});
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      function cleanup() {
+        clearTimeout(timeout);
+        delete window[callbackName];
+        const el = document.getElementById('jsonp-script');
+        if (el) el.remove();
       }
 
-      const data = await response.json();
+      // Google Apps Script akan wrap JSON dengan callback name ini
+      window[callbackName] = function(data) {
+        cleanup();
+        if (!Array.isArray(data)) {
+          reject(new Error('Format data tidak valid.'));
+          return;
+        }
+        resolve(data);
+      };
 
-      if (!Array.isArray(data)) {
-        throw new Error('Format data tidak valid. Harapkan array JSON.');
-      }
-
-      return data;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+      const script = document.createElement('script');
+      script.id = 'jsonp-script';
+      script.src = API_URL + '?callback=' + callbackName + '&t=' + Date.now();
+      script.onerror = () => {
+        cleanup();
+        reject(new Error('Gagal menghubungi server. Cek URL endpoint.'));
+      };
+      document.head.appendChild(script);
+    });
   }
 
   /**
-   * Validate and normalize a single product object
+   * Normalize a single product object
    * @param {Object} item
-   * @returns {Object|null} normalized product or null if invalid
+   * @returns {Object|null}
    */
   function normalizeProduct(item) {
     const namaProduk = String(item.nama_produk || '').trim();
@@ -60,7 +68,7 @@ const response = await fetch(API_URL, {
   }
 
   /**
-   * Fetch and normalize all products, sorted A-Z by name
+   * Fetch and normalize all products, sorted A-Z
    * @returns {Promise<Array>}
    */
   async function getProducts() {
@@ -70,7 +78,6 @@ const response = await fetch(API_URL, {
       .map(normalizeProduct)
       .filter(Boolean);
 
-    // Sort A-Z by product name (case-insensitive)
     normalized.sort((a, b) =>
       a.nama_produk.localeCompare(b.nama_produk, 'id', { sensitivity: 'base' })
     );
