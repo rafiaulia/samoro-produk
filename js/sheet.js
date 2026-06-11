@@ -17,14 +17,12 @@ const Sheet = (() => {
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        signal: controller.signal,
-        // Cache buster to always get fresh data on manual refresh
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+const response = await fetch(API_URL, {
+  method: 'GET',
+  signal: controller.signal,
+  redirect: 'follow',
+  mode: 'cors',
+});
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
