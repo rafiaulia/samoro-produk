@@ -186,7 +186,7 @@ body {
   width: 100%;
   padding: 11px var(--space-5) 11px 44px;
   background: var(--surface);
-  border: 1px solid var(--border-2);
+  border: 2px solid var(--accent); /* ← ganti dari var(--border-2) ke var(--accent) */
   border-radius: var(--r-pill);
   color: var(--text-1);
   font-family: inherit;
@@ -201,10 +201,10 @@ body {
 }
 
 .search-input:focus {
-  border-color: var(--accent);
+  border-color: rgba(0, 208, 132, 0.5); /* hijau lebih redup saat aktif */
   background: var(--surface-2);
+  outline: none;
 }
-
 /* hide native clear button */
 .search-input::-webkit-search-cancel-button { display: none; }
 
